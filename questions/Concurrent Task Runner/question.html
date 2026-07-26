@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TypeScript Coding Interview: Concurrent Task Runner</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.65; }
+    body { margin: 0; background: #0b1020; color: #e8edf7; }
+    main { width: min(820px, calc(100% - 40px)); margin: 48px auto; padding: clamp(24px, 5vw, 56px); background: #131a2b; border: 1px solid #29334a; border-radius: 18px; box-shadow: 0 24px 70px rgb(0 0 0 / 35%); }
+    h1, h2 { line-height: 1.2; color: #fff; }
+    h1 { margin-top: 0; font-size: clamp(2rem, 5vw, 3.25rem); }
+    h2 { margin-top: 2.25rem; }
+    .eyebrow { color: #7dd3fc; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .intro { color: #b8c2d8; font-size: 1.08rem; }
+    code { font-family: "SFMono-Regular", Consolas, monospace; }
+    :not(pre) > code { padding: .15em .38em; color: #bae6fd; background: #202a40; border-radius: 5px; }
+    pre { overflow-x: auto; padding: 20px; background: #080d18; border: 1px solid #283249; border-radius: 10px; line-height: 1.5; }
+    li { margin: .55rem 0; }
+    .note { padding: 14px 18px; background: #17243a; border-left: 4px solid #38bdf8; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Mid-level full-stack TypeScript interview</p>
+    <h1>Concurrent Task Runner</h1>
+    <p class="intro">You have <strong>45 minutes</strong>. Explain your approach and trade-offs as you work, and ask clarifying questions when needed.</p>
+
+    <h2>Problem</h2>
+    <p>A backend service needs to process many independent jobs without overwhelming an external API. Implement:</p>
+    <pre><code>async function runWithLimit&lt;T, R&gt;(
+  items: readonly T[],
+  worker: (item: T, index: number) =&gt; Promise&lt;R&gt;,
+  concurrency: number,
+): Promise&lt;TaskResult&lt;R&gt;[]&gt;</code></pre>
+    <p>Define <code>TaskResult&lt;R&gt;</code> as a discriminated union representing either a successful or failed task.</p>
+
+    <h2>Requirements</h2>
+    <ul>
+      <li>Run no more than <code>concurrency</code> workers at the same time.</li>
+      <li>Start another item as soon as a running worker settles.</li>
+      <li>Process every item in the input array.</li>
+      <li>Preserve input order in the returned array, regardless of completion order.</li>
+      <li>Capture each error in its corresponding result instead of rejecting the entire operation.</li>
+      <li>Treat caught errors as <code>unknown</code>; do not use <code>any</code>.</li>
+      <li>Return an empty array without invoking <code>worker</code> when <code>items</code> is empty.</li>
+      <li>Throw a helpful error when <code>concurrency</code> is not a positive integer.</li>
+      <li>Do not use external libraries in the implementation.</li>
+    </ul>
+
+    <h2>Example</h2>
+    <pre><code>const results = await runWithLimit(
+  ["a", "b", "c"],
+  async (value, index) =&gt; {
+    await delay((3 - index) * 10);
+    if (value === "b") throw new Error("Request failed");
+    return value.toUpperCase();
+  },
+  2,
+);
+
+// Expected shape:
+[
+  { status: "fulfilled", value: "A" },
+  { status: "rejected", reason: /* unknown */ },
+  { status: "fulfilled", value: "C" },
+];</code></pre>
+
+    <p class="note">The returned promise resolves only after every item has settled. It resolves to ordered result objects, not an array of pending promises.</p>
+
+    <h2>Type narrowing</h2>
+    <pre><code>for (const result of results) {
+  if (result.status === "fulfilled") {
+    console.log(result.value);    // R
+  } else {
+    console.error(result.reason); // unknown
+  }
+}</code></pre>
+
+    <h2>Follow-up discussion</h2>
+    <ol>
+      <li>State the time and space complexity.</li>
+      <li>Describe how you would test that the concurrency limit is never exceeded.</li>
+      <li>Explain what happens when <code>worker</code> throws synchronously.</li>
+      <li>Discuss how you would add cancellation using <code>AbortSignal</code>.</li>
+    </ol>
+  </main>
+</body>
+</html>

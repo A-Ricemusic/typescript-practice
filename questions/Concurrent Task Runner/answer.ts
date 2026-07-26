@@ -1,9 +1,10 @@
-type TaskResult<R> =  { status: "fulfilled"; value: R} |
-{ status: "rejected"; reason: unknown };
+export type TaskResult<R> =
+    | { status: "fulfilled"; value: R }
+    | { status: "rejected"; reason: unknown };
 
 
 
-async function runWithLimit<T,R>(
+export async function runWithLimit<T,R>(
     items: readonly T[],
     worker: (item: T, index: number) => Promise<R>,
     concurrency: number,
@@ -31,8 +32,8 @@ async function runWithLimit<T,R>(
         }
     }
 
-    let runnerCount: number = Math.min(concurrency, items.length);
-    let runnerCalls: Promise<void>[] = Array.from(
+    const runnerCount: number = Math.min(concurrency, items.length);
+    const runnerCalls: Promise<void>[] = Array.from(
         { length: runnerCount},
         () => runNext(),
     );
