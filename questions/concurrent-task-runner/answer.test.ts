@@ -1,9 +1,8 @@
+import { setTimeout as delay } from "node:timers/promises";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { runWithLimit } from "./answer.ts";
-
-const delay = (milliseconds: number): Promise<void> =>
-    new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 describe("runWithLimit", () => {
     it("returns results in input order when work finishes out of order", async () => {
